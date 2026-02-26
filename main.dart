@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'local_storage_service.dart';
 import 'settings_controller.dart';
+import 'notification_service.dart';
 import 'login_screen.dart';
 import 'home_screen.dart';
 
@@ -9,6 +10,14 @@ Future<void> main() async {
 
   await LocalStorageService.instance.init();
   await SettingsController.instance.load();
+  await NotificationService.instance.init();
+
+  // Apply notification preference on startup (e.g., schedule/cancel reminder)
+  await NotificationService.instance.syncWithNotificationSetting(
+    enabled: SettingsController.instance.notificationsEnabled,
+    hour: 20,
+    minute: 0,
+  );
 
   runApp(const MyApp());
 }
