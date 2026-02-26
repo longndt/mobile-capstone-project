@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'auth_service.dart';
 import 'login_screen.dart';
+import 'home_screen.dart';
+import 'auth_service.dart';
 
 void main() {
   runApp(const MyApp());
@@ -18,6 +19,10 @@ class MyApp extends StatelessWidget {
         colorSchemeSeed: Colors.indigo,
         useMaterial3: true,
       ),
+      routes: {
+        '/login': (_) => const LoginScreen(),
+        '/home': (_) => const HomeScreen(),
+      },
       home: const SplashDecider(),
     );
   }
@@ -39,23 +44,11 @@ class SplashDecider extends StatelessWidget {
 
         final token = snapshot.data;
         if (token != null && token.isNotEmpty) {
-          // Replace with your real HomeScreen
-          return const _LoggedInPlaceholder();
+          return const HomeScreen();
         }
 
         return const LoginScreen();
       },
-    );
-  }
-}
-
-class _LoggedInPlaceholder extends StatelessWidget {
-  const _LoggedInPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: Text('Auto-login success (token found)')),
     );
   }
 }
