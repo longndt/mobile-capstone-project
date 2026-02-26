@@ -15,19 +15,23 @@ class Course {
     required this.rating,
   });
 
-  factory Course.fromApi(Map<String, dynamic> json) {
-    // Demo mapping from JSONPlaceholder post -> Course
-    const categories = ['Math', 'Science', 'English', 'Coding'];
-    final id = (json['id'] as num).toInt();
-    final userId = (json['userId'] as num?)?.toInt() ?? 1;
-
+  factory Course.fromJson(Map<String, dynamic> json) {
     return Course(
-      id: id,
-      title: (json['title'] ?? 'Untitled Course').toString(),
-      description: (json['body'] ?? '').toString(),
-      category: categories[(userId + id) % categories.length],
-      lessons: 8 + (id % 15), // fake lesson count for demo
-      rating: 4.0 + ((id % 10) / 10), // 4.0 - 4.9
+      id: (json['id'] as num?)?.toInt() ?? 0,
+      title: (json['title'] ?? '').toString(),
+      description: (json['description'] ?? json['body'] ?? '').toString(),
+      category: (json['category'] ?? 'General').toString(),
+      lessons: (json['lessons'] as num?)?.toInt() ?? 0,
+      rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'title': title,
+        'description': description,
+        'category': category,
+        'lessons': lessons,
+        'rating': rating,
+      };
 }
