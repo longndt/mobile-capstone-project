@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
+import 'local_storage_service.dart';
+import 'settings_controller.dart';
 import 'login_screen.dart';
 import 'home_screen.dart';
-import 'auth_service.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await LocalStorageService.instance.init();
+  await SettingsController.instance.load();
+
   runApp(const MyApp());
 }
 
@@ -12,42 +18,33 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Educational App',
-      theme: ThemeData(
-        colorSchemeSeed: Colors.indigo,
-        useMaterial3: true,
-      ),
-      routes: {
-        '/login': (_) => const LoginScreen(),
-        '/home': (_) => const HomeScreen(),
-      },
-      home: const SplashDecider(),
-    );
-  }
-}
+    final settings = SettingsController.instance;
 
-class SplashDecider extends StatelessWidget {
-  const SplashDecider({super.key});
+    return AnimatedBuilder(
+      animation: settings,
+      builder: (context, _) {
+        final isLoggedIn = LocalStorageService.instance.isLoggedIn;
 
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<String?>(
-      future: AuthService.getSavedToken(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        final token = snapshot.data;
-        if (token != null && token.isNotEmpty) {
-          return const HomeScreen();
-        }
-
-        return const LoginScreen();
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'Educational App',
+          themeMode: settings.themeMode,
+          theme: ThemeData(
+            colorSchemeSeed: Colors.indigo,
+            brightness: Brightness.light,
+            useMaterial3: true,
+          ),
+          darkTheme: ThemeData(
+            colorSchemeSeed: Colors.indigo,
+            brightness: Brightness.dark,
+            useMaterial3: true,
+          ),
+          routes: {
+            '/login': (_) => const LoginScreen(),
+            '/home': (_) => const HomeScreen(),
+          },
+          home: isLoggedIn ? const HomeScreen() : const LoginScreen(),
+        );
       },
     );
   }
