@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'local_storage_service.dart';
+import 'notification_service.dart';
 
 class SettingsController extends ChangeNotifier {
   SettingsController._();
@@ -25,7 +26,7 @@ class SettingsController extends ChangeNotifier {
 
   Future<void> setDarkMode(bool value) async {
     _settings = _settings.copyWith(darkMode: value);
-    notifyListeners(); // immediate UI update
+    notifyListeners();
     await LocalStorageService.instance.setDarkMode(value);
   }
 
@@ -33,6 +34,13 @@ class SettingsController extends ChangeNotifier {
     _settings = _settings.copyWith(notificationsEnabled: value);
     notifyListeners();
     await LocalStorageService.instance.setNotificationsEnabled(value);
+
+    // Sync notification scheduling with setting
+    await NotificationService.instance.syncWithNotificationSetting(
+      enabled: value,
+      hour: 20,
+      minute: 0,
+    );
   }
 
   Future<void> setLanguageCode(String value) async {
@@ -45,5 +53,11 @@ class SettingsController extends ChangeNotifier {
     _settings = AppSettings.defaults;
     notifyListeners();
     await LocalStorageService.instance.saveSettings(_settings);
+
+    await NotificationService.instance.syncWithNotificationSetting(
+      enabled: _settings.notificationsEnabled,
+      hour: 20,
+      minute: 0,
+    );
   }
 }
