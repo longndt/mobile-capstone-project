@@ -84,28 +84,27 @@ class AuthService {
     );
   }
 
-  static Future<void> _persistAuthData(Map<String, dynamic> data) async {
-    final token = data['token'];
-    final user = data['user'];
+static Future<void> _persistAuthData(Map<String, dynamic> data) async {
+  final token = data['token']?.toString();
 
-    final prefs = await SharedPreferences.getInstance();
+  String? userId;
+  String? userName;
+  String? userEmail;
 
-    if (token != null) {
-      await prefs.setString('auth_token', token.toString());
-    }
-
-    if (user is Map<String, dynamic>) {
-      if (user['id'] != null) {
-        await prefs.setString('user_id', user['id'].toString());
-      }
-      if (user['name'] != null) {
-        await prefs.setString('user_name', user['name'].toString());
-      }
-      if (user['email'] != null) {
-        await prefs.setString('user_email', user['email'].toString());
-      }
-    }
+  final user = data['user'];
+  if (user is Map<String, dynamic>) {
+    userId = user['id']?.toString();
+    userName = user['name']?.toString();
+    userEmail = user['email']?.toString();
   }
+
+  await LocalStorageService.instance.saveAuthSession(
+    token: token,
+    userId: userId,
+    userName: userName,
+    userEmail: userEmail,
+  );
+}
 
   static Map<String, dynamic> _safeDecode(String body) {
     try {
@@ -117,16 +116,11 @@ class AuthService {
     }
   }
 
-  static Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('auth_token');
-    await prefs.remove('user_id');
-    await prefs.remove('user_name');
-    await prefs.remove('user_email');
-  }
+ static Future<void> logout() async {
+  await LocalStorageService.instance.clearAuthSession();
+}
 
-  static Future<String?> getSavedToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('auth_token');
-  }
+static Future<String?> getSavedToken() async {
+  return LocalStorageService.instance.getAuthToken();
+}
 }
