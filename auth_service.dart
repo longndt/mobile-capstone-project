@@ -11,20 +11,8 @@ class AuthException implements Exception {
 }
 
 class AuthService {
-  // TODO: Replace with your real backend URL
   static const String baseUrl = 'https://your-api.com/api';
 
-  /// Signup user and persist auth data if backend returns token.
-  ///
-  /// Expected success response example:
-  /// {
-  ///   "token": "jwt_token_here",
-  ///   "user": {
-  ///     "id": "123",
-  ///     "name": "John Doe",
-  ///     "email": "john@example.com"
-  ///   }
-  /// }
   static Future<void> signUp({
     required String name,
     required String email,
@@ -43,44 +31,80 @@ class AuthService {
           'password': password,
         }),
       );
-    } catch (e) {
+    } catch (_) {
       throw AuthException('Cannot connect to server. Please try again.');
     }
 
-    final Map<String, dynamic> data = _safeDecode(response.body);
+    final data = _safeDecode(response.body);
 
     if (response.statusCode == 200 || response.statusCode == 201) {
-      // If backend auto-login on signup and returns token => save it
-      final token = data['token'];
-      final user = data['user'];
-
-      final prefs = await SharedPreferences.getInstance();
-
-      if (token != null) {
-        await prefs.setString('auth_token', token.toString());
-      }
-
-      if (user is Map<String, dynamic>) {
-        if (user['id'] != null) {
-          await prefs.setString('user_id', user['id'].toString());
-        }
-        if (user['name'] != null) {
-          await prefs.setString('user_name', user['name'].toString());
-        }
-        if (user['email'] != null) {
-          await prefs.setString('user_email', user['email'].toString());
-        }
-      }
-
+      await _persistAuthData(data);
       return;
     }
 
-    // Handle common API error formats
-    final message =
-        data['message']?.toString() ??
-        data['error']?.toString() ??
-        'Signup failed. Please try again.';
-    throw AuthException(message);
+    throw AuthException(
+      data['message']?.toString() ??
+          data['error']?.toString() ??
+          'Signup failed. Please try again.',
+    );
+  }
+
+  /// NEW: Login user and persist auth data
+  static Future<void> login({
+    required String email,
+    required String password,
+  }) async {
+    final uri = Uri.parse('$baseUrl/auth/login');
+
+    http.Response response;
+    try {
+      response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': email.trim(),
+          'password': password,
+        }),
+      );
+    } catch (_) {
+      throw AuthException('Cannot connect to server. Please try again.');
+    }
+
+    final data = _safeDecode(response.body);
+
+    if (response.statusCode == 200) {
+      await _persistAuthData(data);
+      return;
+    }
+
+    throw AuthException(
+      data['message']?.toString() ??
+          data['error']?.toString() ??
+          'Login failed. Please check your credentials.',
+    );
+  }
+
+  static Future<void> _persistAuthData(Map<String, dynamic> data) async {
+    final token = data['token'];
+    final user = data['user'];
+
+    final prefs = await SharedPreferences.getInstance();
+
+    if (token != null) {
+      await prefs.setString('auth_token', token.toString());
+    }
+
+    if (user is Map<String, dynamic>) {
+      if (user['id'] != null) {
+        await prefs.setString('user_id', user['id'].toString());
+      }
+      if (user['name'] != null) {
+        await prefs.setString('user_name', user['name'].toString());
+      }
+      if (user['email'] != null) {
+        await prefs.setString('user_email', user['email'].toString());
+      }
+    }
   }
 
   static Map<String, dynamic> _safeDecode(String body) {
